@@ -1,19 +1,234 @@
-# UK Gig Tracker — tracked artists
+# UK Gig Tracker — artists to track
 # One artist per line. Lines starting with # are ignored.
-# Edit this freely, or run spotify_import.py to auto-fill from your Spotify taste.
+# Edit freely: add, remove, reorder. Re-run tour_tracker.py after changes.
+#
+# Names are kept "search-friendly" (e.g. "Nick Cave" not "Nick Cave & The Bad
+# Seeds") so Ticketmaster matches them cleanly.
 
-Dua Lipa
-Coldplay
-Arctic Monkeys
-The Killers
-Sam Fender
-Fontaines D.C.
-Olivia Rodrigo
-Taylor Swift
-Harry Styles
-Florence + The Machine
-Disclosure
-The 1975
-Stormzy
-Raye
-Chase & Status
+# ============================================================
+#  YOUR CORE
+# ============================================================
+Eric Clapton
+Paul Simon
+Teddy Swims
+
+# ============================================================
+#  CLASSIC ROCK / ROCK LEGENDS
+# ============================================================
+Mark Knopfler
+Van Morrison
+Bruce Springsteen
+Bob Dylan
+Neil Young
+Rod Stewart
+Peter Gabriel
+Steely Dan
+Santana
+Deep Purple
+Bryan Adams
+Chris Rea
+
+# ============================================================
+#  BLUES / BLUES-ROCK  (Clapton lane)
+# ============================================================
+Joe Bonamassa
+Gary Clark Jr.
+Buddy Guy
+John Mayer
+Beth Hart
+Walter Trout
+Samantha Fish
+Robert Cray
+
+# ============================================================
+#  SINGER-SONGWRITER  (Paul Simon / Jackson Browne lane)
+# ============================================================
+Jackson Browne
+Bonnie Raitt
+James Taylor
+Graham Nash
+Cat Stevens
+Ray LaMontagne
+Gregory Alan Isakov
+Ben Howard
+David Gray
+Damien Rice
+Glen Hansard
+Jose Gonzalez
+
+# ============================================================
+#  SOUL / MODERN SOUL-POP  (Teddy Swims / Leon Bridges / Kiwanuka lane)
+# ============================================================
+Hozier
+Michael Kiwanuka
+Leon Bridges
+Lianne La Havas
+Celeste
+Gregory Porter
+Black Pumas
+Durand Jones
+Nathaniel Rateliff
+St. Paul & The Broken Bones
+Curtis Harding
+Allen Stone
+Rag'n'Bone Man
+Emeli Sande
+Joss Stone
+
+# ============================================================
+#  AMERICANA / ROOTS / FOLK-ROCK
+# ============================================================
+The War on Drugs
+Jason Isbell
+Brandi Carlile
+Fleet Foxes
+Mumford & Sons
+The Lumineers
+
+# ============================================================
+#  AUSTRALIAN  (your heritage — some of these tour the UK regularly)
+# ============================================================
+Crowded House
+Courtney Barnett
+Nick Cave
+Tame Impala
+Paul Kelly
+The Teskey Brothers
+John Butler
+Angus & Julia Stone
+Vance Joy
+Xavier Rudd
+
+
+# ████████████████████████████████████████████████████████████
+#  SUGGESTED — SIMILAR ARTISTS (added by Claude)
+#  Same lanes as above. Prune anything you don't fancy.
+#  The tracker auto-skips any it can't match on Ticketmaster.
+# ████████████████████████████████████████████████████████████
+
+# ------------------------------------------------------------
+#  + CLASSIC ROCK / ROCK LEGENDS
+# ------------------------------------------------------------
+Robert Plant
+Steve Winwood
+Don Henley
+ZZ Top
+Lynyrd Skynyrd
+The Doobie Brothers
+Toto
+Jeff Lynne's ELO
+Roger Hodgson
+10cc
+Simple Minds
+Texas
+Squeeze
+Nils Lofgren
+John Fogerty
+Boz Scaggs
+
+# ------------------------------------------------------------
+#  + BLUES / BLUES-ROCK  (Clapton lane)
+# ------------------------------------------------------------
+Kenny Wayne Shepherd
+Eric Gales
+Larkin Poe
+Marcus King
+Christone "Kingfish" Ingram
+Joanne Shaw Taylor
+Tedeschi Trucks Band
+Gov't Mule
+Keb' Mo'
+Taj Mahal
+Seasick Steve
+Rival Sons
+King King
+Warren Haynes
+
+# ------------------------------------------------------------
+#  + SINGER-SONGWRITER  (Paul Simon / Jackson Browne lane)
+# ------------------------------------------------------------
+Richard Thompson
+Al Stewart
+Don McLean
+Rufus Wainwright
+Joan Armatrading
+Suzanne Vega
+Beth Orton
+Iron & Wine
+Bon Iver
+Father John Misty
+The Tallest Man on Earth
+Villagers
+Lisa Hannigan
+Nick Mulvey
+Passenger
+Jack Johnson
+Amos Lee
+Lord Huron
+Novo Amor
+Dermot Kennedy
+Foy Vance
+The Paper Kites
+
+# ------------------------------------------------------------
+#  + SOUL / MODERN SOUL-POP  (Teddy Swims / Kiwanuka lane)
+# ------------------------------------------------------------
+Alabama Shakes
+Brittany Howard
+Lake Street Dive
+Lee Fields
+Jalen Ngonda
+Anderson .Paak
+Aloe Blacc
+Yebba
+Jorja Smith
+Jacob Banks
+Bruno Major
+Tom Misch
+Jordan Rakei
+James Bay
+Mahalia
+
+# ------------------------------------------------------------
+#  + AMERICANA / ROOTS / FOLK-ROCK
+# ------------------------------------------------------------
+Wilco
+The Avett Brothers
+Sturgill Simpson
+Tyler Childers
+Chris Stapleton
+Zach Bryan
+The Head and the Heart
+Of Monsters and Men
+First Aid Kit
+The Decemberists
+Calexico
+Sarah Jarosz
+Yola
+Margo Price
+Lucinda Williams
+Steve Earle
+Dawes
+The Wood Brothers
+Big Thief
+Old Crow Medicine Show
+
+# ------------------------------------------------------------
+#  + AUSTRALIAN
+# ------------------------------------------------------------
+Midnight Oil
+Gang of Youths
+King Gizzard and the Lizard Wizard
+Tash Sultana
+Matt Corby
+Pete Murray
+Missy Higgins
+Kasey Chambers
+The Cat Empire
+Boy & Bear
+The Waifs
+Julia Jacklin
+Stella Donnelly
+Ziggy Alberts
+C.W. Stoneking
+Hiatus Kaiyote
