@@ -1,0 +1,74 @@
+name: Refresh gig dashboard
+
+# Runs the Ticketmaster scan in the cloud and publishes dashboard.html to
+# GitHub Pages. No laptop required.
+
+on:
+  schedule:
+    - cron: "0 8 */2 * *"   # ~every 2 days, 08:00 UTC
+  workflow_dispatch:          # lets you run it on demand from the Actions tab
+  push:
+    branches: [ master ]
+    paths:                    # re-publish when you edit the tracker/artist list
+      - "artists.txt"
+      - "tour_tracker.py"
+      - ".github/workflows/refresh.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      # Restore the "seen events" cache so the NEW tag is meaningful across runs.
+      - name: Restore run cache
+        uses: actions/cache@v4
+        with:
+          path: cache.json
+          key: gigcache-${{ github.run_id }}
+          restore-keys: |
+            gigcache-
+
+      - name: Write config from secret
+        env:
+          TM_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+        run: |
+          if [ -z "$TM_KEY" ]; then
+            echo "::error::Secret TICKETMASTER_API_KEY is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          printf '{ "ticketmaster_api_key": "%s" }\n' "$TM_KEY" > config.json
+
+      - name: Run the tracker
+        run: python tour_tracker.py
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp dashboard.html _site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
