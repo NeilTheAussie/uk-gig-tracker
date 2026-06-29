@@ -1,0 +1,10 @@
+{
+  "ticketmaster_api_key": "PASTE_YOUR_CONSUMER_KEY_HERE",
+
+  "_comment": "The spotify block is OPTIONAL — only needed if you run spotify_import.py.",
+  "spotify": {
+    "client_id": "PASTE_YOUR_SPOTIFY_CLIENT_ID",
+    "client_secret": "PASTE_YOUR_SPOTIFY_CLIENT_SECRET",
+    "redirect_uri": "http://127.0.0.1:8888/callback"
+  }
+}

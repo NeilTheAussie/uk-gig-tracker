@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK Gig Tracker</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    color:#1a1a1a; background:#fafafa; line-height:1.6; padding:40px;
+    max-width:1100px; margin:0 auto; }
+.report-header { border-bottom:3px solid #1a1a1a; padding-bottom:20px; margin-bottom:30px; }
+.report-header h1 { font-size:28px; font-weight:700; margin-bottom:5px; }
+.report-meta { font-size:14px; color:#666; }
+.section { margin-bottom:35px; }
+.section h2 { font-size:20px; font-weight:600; margin-bottom:15px; padding-bottom:8px; border-bottom:1px solid #e0e0e0; }
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; margin:20px 0; }
+.kpi-card { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:20px; text-align:center; }
+.kpi-value { font-size:32px; font-weight:700; }
+.kpi-label { font-size:13px; color:#666; margin-top:5px; }
+.kpi-up { color:#16a34a; } .kpi-neutral { color:#666; }
+.callout { background:#fffbeb; border-left:4px solid #f59e0b; padding:15px 20px; margin:15px 0; border-radius:0 6px 6px 0; font-size:14px; }
+.hero-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+.hero-card { background:#fff; border:1px solid #e0e0e0; border-left:4px solid #f59e0b; border-radius:8px; padding:18px 20px; }
+.hero-top { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.badge-amber { background:#fef3c7; color:#92400e; font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 8px; border-radius:4px; }
+.badge-green { background:#dcfce7; color:#166534; font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 8px; border-radius:4px; }
+.badge-indigo { background:#e0e7ff; color:#3730a3; font-size:11px; font-weight:700; letter-spacing:.04em; padding:3px 8px; border-radius:4px; }
+.chip-o2 { background:#eef2ff; color:#4338ca; font-size:11px; font-weight:600; padding:1px 6px; border-radius:3px; border:1px solid #c7d2fe; }
+.card-green { border-left-color:#16a34a; }
+.card-indigo { border-left-color:#4f46e5; }
+.card-amber { border-left-color:#f59e0b; }
+.countdown { font-size:12px; color:#dc2626; font-weight:600; }
+.hero-artist { font-size:18px; font-weight:700; margin-top:2px; }
+.hero-event { font-size:14px; color:#444; }
+.hero-meta { font-size:13px; color:#666; margin:6px 0; }
+.hero-window { font-size:14px; margin-top:8px; }
+.hero-general { font-size:13px; color:#666; }
+.hero-link { display:inline-block; margin-top:10px; font-size:13px; color:#2563eb; text-decoration:none; }
+.hero-link:hover { text-decoration:underline; }
+table { width:100%; border-collapse:collapse; margin:15px 0; font-size:14px; background:#fff; }
+th { background:#f5f5f5; font-weight:600; text-align:left; padding:10px 12px; border-bottom:2px solid #ddd; }
+td { padding:10px 12px; border-bottom:1px solid #eee; vertical-align:top; }
+tr:hover { background:#fafafa; }
+td a { color:#2563eb; text-decoration:none; } td a:hover { text-decoration:underline; }
+.muted { color:#999; font-size:13px; }
+.new-tag { background:#dc2626; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px; vertical-align:middle; }
+.report-footer { margin-top:40px; padding-top:20px; border-top:1px solid #e0e0e0; font-size:12px; color:#999; }
+@media print { body { padding:20px; background:#fff; } .hero-card,.kpi-card { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<div class="report-header">
+    <h1>UK Gig Tracker</h1>
+    <div class="report-meta">
+        Generated Mon 29 Jun 2026, 20:05 · 15 artists tracked · O2 Priority windows estimated at 48h before general sale
+    </div>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-value">3</div><div class="kpi-label">Upcoming UK shows</div></div>
+    <div class="kpi-card"><div class="kpi-value kpi-neutral">3</div><div class="kpi-label">Priority windows ahead</div></div>
+    <div class="kpi-card"><div class="kpi-value">0</div><div class="kpi-label">On sale now</div></div>
+    <div class="kpi-card"><div class="kpi-value kpi-up">1</div><div class="kpi-label">New since last run</div></div>
+</div>
+
+<div class="section">
+    <h2>🔔 Priority windows coming up — don't miss these</h2>
+    <div class="hero-grid">
+            <div class="hero-card card-indigo">
+                <div class="hero-top">
+                    <span class="badge-indigo">O2 VENUE · PRIORITY LIKELY</span>
+                    <span class="countdown">in 3 days</span>
+                    
+                </div>
+                <div class="hero-artist">Sam Fender</div>
+                <div class="hero-event">Sam Fender live</div>
+                <div class="hero-meta">
+                    O2 Academy Brixton, London <span class="chip-o2">O2 venue</span>
+                    &nbsp;·&nbsp; Fri 02 Oct 2026
+                </div>
+                <div class="hero-window">Priority opens ~<strong>Thu 02 Jul 2026, 20:04</strong> <span class="muted">(O2 venue — presale very likely; 48h before general sale)</span></div>
+                <div class="hero-general">General sale: Sat 04 Jul 2026, 20:04</div>
+                <a class="hero-link" href="https://www.ticketmaster.co.uk/x" target="_blank">View on Ticketmaster &rarr;</a>
+            </div>
+            <div class="hero-card card-green">
+                <div class="hero-top">
+                    <span class="badge-green">CONFIRMED O2 PRESALE</span>
+                    <span class="countdown">in 7 days</span>
+                    <span class="new-tag">NEW</span>
+                </div>
+                <div class="hero-artist">Dua Lipa</div>
+                <div class="hero-event">Dua Lipa live</div>
+                <div class="hero-meta">
+                    The O2, London <span class="chip-o2">O2 venue</span>
+                    &nbsp;·&nbsp; Tue 27 Oct 2026
+                </div>
+                <div class="hero-window">O2 Priority presale: <strong>Mon 06 Jul 2026, 20:04</strong></div>
+                <div class="hero-general">General sale: Thu 09 Jul 2026, 20:04</div>
+                <a class="hero-link" href="https://www.ticketmaster.co.uk/x" target="_blank">View on Ticketmaster &rarr;</a>
+            </div>
+            <div class="hero-card card-amber">
+                <div class="hero-top">
+                    <span class="badge-amber">ESTIMATED PRIORITY WINDOW</span>
+                    <span class="countdown">in 12 days</span>
+                    
+                </div>
+                <div class="hero-artist">The Killers</div>
+                <div class="hero-event">The Killers live</div>
+                <div class="hero-meta">
+                    Utilita Arena, Birmingham 
+                    &nbsp;·&nbsp; Thu 17 Sep 2026
+                </div>
+                <div class="hero-window">Priority opens ~<strong>Sat 11 Jul 2026, 20:04</strong> <span class="muted">(estimate, 48h before general sale)</span></div>
+                <div class="hero-general">General sale: Mon 13 Jul 2026, 20:04</div>
+                <a class="hero-link" href="https://www.ticketmaster.co.uk/x" target="_blank">View on Ticketmaster &rarr;</a>
+            </div></div>
+</div>
+
+<div class="section">
+    <h2>On sale now</h2>
+    <p class="muted">Nothing currently on general sale.</p>
+</div>
+
+<div class="section">
+    <h2>All tracked UK shows</h2>
+    
+        <table>
+            <thead><tr><th>Artist</th><th>Venue</th><th>Show date</th><th>Priority (est/confirmed)</th><th>Buy</th></tr></thead>
+            <tbody>
+            <tr>
+                <td><strong>The Killers</strong> </td>
+                <td>Utilita Arena<br><span class="muted">Birmingham</span></td>
+                <td>Thu 17 Sep 2026</td>
+                <td>Sat 11 Jul 2026, 20:04 (est)</td>
+                <td><a href="https://www.ticketmaster.co.uk/x" target="_blank">tickets</a></td>
+            </tr>
+            <tr>
+                <td><strong>Sam Fender</strong> </td>
+                <td>O2 Academy Brixton<br><span class="muted">London</span></td>
+                <td>Fri 02 Oct 2026</td>
+                <td>Thu 02 Jul 2026, 20:04 (likely) <span class="chip-o2">O2</span></td>
+                <td><a href="https://www.ticketmaster.co.uk/x" target="_blank">tickets</a></td>
+            </tr>
+            <tr>
+                <td><strong>Dua Lipa</strong> <span class="new-tag">NEW</span></td>
+                <td>The O2<br><span class="muted">London</span></td>
+                <td>Tue 27 Oct 2026</td>
+                <td>Mon 06 Jul 2026, 20:04 <span class="chip-o2">O2</span></td>
+                <td><a href="https://www.ticketmaster.co.uk/x" target="_blank">tickets</a></td>
+            </tr></tbody>
+        </table>
+</div>
+
+<div class="report-footer">
+    Data from the Ticketmaster Discovery API. O2 Priority has no public feed. <strong>Confirmed</strong> = Ticketmaster
+    lists an explicit O2 presale. <strong>O2 venue · likely</strong> = the show is at an O2-branded venue (The O2,
+    O2 Academy, O2 Apollo, etc.), where a Priority presale almost always runs. <strong>Estimate</strong> = the usual
+    48h-before-general-sale pattern at a non-O2 venue. Windows are a guide — always confirm in the O2 Priority app.
+    Re-run <code>tour_tracker.py</code> after new tour announcements to refresh.
+</div>
+</body>
+</html>

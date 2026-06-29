@@ -1,0 +1,19 @@
+# UK Gig Tracker — tracked artists
+# One artist per line. Lines starting with # are ignored.
+# Edit this freely, or run spotify_import.py to auto-fill from your Spotify taste.
+
+Dua Lipa
+Coldplay
+Arctic Monkeys
+The Killers
+Sam Fender
+Fontaines D.C.
+Olivia Rodrigo
+Taylor Swift
+Harry Styles
+Florence + The Machine
+Disclosure
+The 1975
+Stormzy
+Raye
+Chase & Status

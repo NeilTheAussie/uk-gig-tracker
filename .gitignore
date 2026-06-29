@@ -1,0 +1,15 @@
+# Secrets — your real API key lives here, never commit it
+config.json
+
+# Spotify OAuth token cache
+.spotify_cache.json
+
+# Generated output
+dashboard.html
+cache.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
