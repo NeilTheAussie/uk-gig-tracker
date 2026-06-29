@@ -265,7 +265,7 @@ def render_dashboard(events, generated_at, n_artists, n_new):
             other.append(e)
 
     priority_upcoming.sort(key=lambda e: pdt(e["priority_start"]) or now)
-    on_sale_now.sort(key=lambda e: pdt(e["event_dt"]) or now)
+    on_sale_now.sort(key=lambda e: (e["artist"].lower(), pdt(e["event_dt"]) or now))
     other.sort(key=lambda e: pdt(e["event_dt"]) or now)
 
     n_shows = len(events)
@@ -326,8 +326,8 @@ def render_dashboard(events, generated_at, n_artists, n_new):
                       'Either nothing tracked has gone on sale soon, or the dates are already on sale '
                       '(see below). Re-run after new tour announcements.</div>')
 
-    # ---- On sale now table ----
-    def rows(bucket, show_priority=True):
+    # ---- Row renderer (shared by the tables below) ----
+    def rows(bucket, show_priority=True, show_artist=True):
         out = ""
         for e in bucket:
             new_tag = '<span class="new-tag">NEW</span>' if e.get("_is_new") else ""
@@ -343,16 +343,19 @@ def render_dashboard(events, generated_at, n_artists, n_new):
                 else:
                     prio = "—"
             link = f'<a href="{esc(e["url"])}" target="_blank">tickets</a>' if e["url"] else ""
+            artist_td = f'<td><strong>{esc(e["artist"])}</strong> {new_tag}</td>' if show_artist else ""
+            date_extra = f' {new_tag}' if (not show_artist and new_tag) else ""
             out += f"""
             <tr>
-                <td><strong>{esc(e['artist'])}</strong> {new_tag}</td>
+                {artist_td}
                 <td>{esc(e['venue'] or 'TBC')}<br><span class="muted">{esc(e['city'] or '')}</span></td>
-                <td>{esc(ev_date)}</td>
+                <td>{esc(ev_date)}{date_extra}</td>
                 {f'<td>{prio}</td>' if show_priority else ''}
                 <td>{link}</td>
             </tr>"""
         return out
 
+    # ---- On sale now (sorted by artist) ----
     on_sale_table = ""
     if on_sale_now:
         on_sale_table = f"""
@@ -363,13 +366,24 @@ def render_dashboard(events, generated_at, n_artists, n_new):
     else:
         on_sale_table = '<p class="muted">Nothing currently on general sale.</p>'
 
+    # ---- All tracked UK shows, GROUPED BY ARTIST ----
     all_table = ""
     if events:
-        all_sorted = sorted(events, key=lambda e: pdt(e["event_dt"]) or now)
+        groups = {}
+        for e in events:
+            groups.setdefault(e["artist"], []).append(e)
+        body = ""
+        for artist in sorted(groups, key=lambda a: a.lower()):
+            evs_a = sorted(groups[artist], key=lambda e: pdt(e["event_dt"]) or now)
+            n = len(evs_a)
+            anynew = ' <span class="new-tag">NEW</span>' if any(x.get("_is_new") for x in evs_a) else ""
+            body += (f'<tr class="group-row"><td colspan="4">{esc(artist)} '
+                     f'<span class="muted">· {n} show{"s" if n != 1 else ""}</span>{anynew}</td></tr>')
+            body += rows(evs_a, show_priority=True, show_artist=False)
         all_table = f"""
         <table>
-            <thead><tr><th>Artist</th><th>Venue</th><th>Show date</th><th>Priority (est/confirmed)</th><th>Buy</th></tr></thead>
-            <tbody>{rows(all_sorted, show_priority=True)}</tbody>
+            <thead><tr><th>Venue</th><th>Show date</th><th>Priority (est/confirmed)</th><th>Buy</th></tr></thead>
+            <tbody>{body}</tbody>
         </table>"""
     else:
         all_table = '<p class="muted">No UK shows found for your tracked artists yet.</p>'
@@ -420,6 +434,8 @@ table {{ width:100%; border-collapse:collapse; margin:15px 0; font-size:14px; ba
 th {{ background:#f5f5f5; font-weight:600; text-align:left; padding:10px 12px; border-bottom:2px solid #ddd; }}
 td {{ padding:10px 12px; border-bottom:1px solid #eee; vertical-align:top; }}
 tr:hover {{ background:#fafafa; }}
+.group-row td {{ background:#eef2ff; font-weight:700; font-size:15px; border-top:2px solid #c7d2fe; color:#1a1a1a; }}
+.group-row:hover td {{ background:#eef2ff; }}
 td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:underline; }}
 .muted {{ color:#999; font-size:13px; }}
 .new-tag {{ background:#dc2626; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px; vertical-align:middle; }}

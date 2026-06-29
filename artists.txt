@@ -232,3 +232,22 @@ Stella Donnelly
 Ziggy Alberts
 C.W. Stoneking
 Hiatus Kaiyote
+
+# ------------------------------------------------------------
+#  + SPLIT-BAND FRONTMEN & REUNIONS
+#  The band's done, but the voice still tours (solo). Plus reunion acts.
+#  (Eric Clapton/Cream, Mark Knopfler/Dire Straits, Peter Gabriel & Phil
+#   Collins/Genesis, Don Henley/Eagles, John Fogerty/CCR, Graham Nash/CSNY,
+#   Paul Simon/S&G are already tracked above.)
+# ------------------------------------------------------------
+Eagles
+Art Garfunkel
+Roger Waters
+David Gilmour
+Sting
+Paul McCartney
+Ringo Starr
+Stephen Stills
+Stevie Nicks
+Lindsey Buckingham
+David Byrne
