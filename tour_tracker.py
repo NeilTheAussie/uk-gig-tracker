@@ -59,7 +59,7 @@ def load_config():
             "  -> Copy config.example.json to config.json and add your Ticketmaster API key.\n"
             "  -> Get a free key at https://developer.ticketmaster.com"
         )
-    with open(CONFIG_PATH) as f:
+    with open(CONFIG_PATH, encoding="utf-8") as f:
         cfg = json.load(f)
     key = cfg.get("ticketmaster_api_key", "").strip()
     if not key or key.startswith("PASTE_"):
@@ -71,7 +71,7 @@ def load_artists():
     if not os.path.exists(ARTISTS_PATH):
         sys.exit("No artists.txt found.")
     artists = []
-    with open(ARTISTS_PATH) as f:
+    with open(ARTISTS_PATH, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith("#"):
@@ -84,7 +84,7 @@ def load_artists():
 def load_cache():
     if os.path.exists(CACHE_PATH):
         try:
-            with open(CACHE_PATH) as f:
+            with open(CACHE_PATH, encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             return {}
@@ -510,11 +510,11 @@ def main():
 
     generated_at = datetime.now(UK_TZ).strftime("%a %d %b %Y, %H:%M")
     html_out = render_dashboard(events, generated_at, len(artists), n_new)
-    with open(DASHBOARD_PATH, "w") as f:
+    with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(html_out)
 
     # Save cache
-    with open(CACHE_PATH, "w") as f:
+    with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump({
             "generated_at": generated_at,
             "event_ids": [e["id"] for e in events],
