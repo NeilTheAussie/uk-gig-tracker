@@ -355,7 +355,7 @@ DASHBOARD_JS = r"""
 """
 
 
-def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk"):
+def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk", tracked_artists=None):
     now = datetime.now(UK_TZ)
     title_text = (f"{owner}'s " if owner else "") + {
         "uk": "UK Gig Tracker",
@@ -547,6 +547,28 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
     else:
         all_table = f'<p class="muted">No {shows_noun} found for your tracked artists yet.</p>'
 
+    # ---- Full tracked roster (includes bands with no current dates) ----
+    playing = {e["artist"] for e in events}
+    tracked_sorted = sorted(tracked_artists or [], key=lambda a: a.lower())
+    n_track = len(tracked_sorted)
+    n_on = sum(1 for a in tracked_sorted if a in playing)
+    track_chips = "".join(
+        f'<span class="track-chip {"on" if a in playing else "off"}">'
+        f'{"&#9679;" if a in playing else "&#9675;"} {esc(a)}</span>'
+        for a in tracked_sorted
+    )
+    tracked_section = f"""
+<div class="section">
+    <h2>Bands we're tracking ({n_track})</h2>
+    <details class="artist-block">
+        <summary><span class="artist-name">Show all {n_track} tracked bands</span> <span class="muted">&middot; {n_on} with dates right now</span></summary>
+        <div class="track-wrap">
+            <p class="track-legend muted">&#9679; has upcoming dates &nbsp;&middot;&nbsp; &#9675; tracked, nothing in range right now</p>
+            <div class="track-chips">{track_chips}</div>
+        </div>
+    </details>
+</div>""" if tracked_sorted else ""
+
     new_kpi_class = "kpi-up" if n_new else "kpi-neutral"
 
     page = f"""<!DOCTYPE html>
@@ -616,6 +638,11 @@ details.artist-block table {{ margin:0; border-top:1px solid #eee; }}
 .btn-ghost {{ background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:6px; padding:9px 14px; font-size:13px; cursor:pointer; }}
 .btn-ghost:disabled {{ color:#aaa; cursor:default; }}
 .manage-msg {{ margin-top:8px; font-size:13px; }}
+.track-wrap {{ padding:4px 4px 10px; }}
+.track-legend {{ margin-bottom:10px; font-size:12px; }}
+.track-chips {{ display:flex; flex-wrap:wrap; gap:6px; }}
+.track-chip {{ font-size:12px; padding:3px 9px; border-radius:12px; border:1px solid #e5e5e5; background:#fafafa; color:#999; }}
+.track-chip.on {{ color:#166534; background:#f0fdf4; border-color:#bbf7d0; font-weight:600; }}
 @media print {{ body {{ padding:20px; background:#fff; }} .hero-card,.kpi-card {{ break-inside:avoid; }} details.artist-block {{ break-inside:avoid; }} }}
 </style>
 </head>
@@ -652,6 +679,7 @@ details.artist-block table {{ margin:0; border-top:1px solid #eee; }}
         <b>+ Add band</b> opens your tracked-list file on GitHub so the next scan includes it.
     </div>
 </div>
+{tracked_section}
 
 <div class="section">
     <h2>All tracked {esc(shows_noun)} — grouped by artist <span class="muted" style="font-size:13px;font-weight:400">(click a band to see dates)</span></h2>
@@ -732,7 +760,7 @@ def main():
             n_new += 1
 
     generated_at = datetime.now(UK_TZ).strftime("%a %d %b %Y, %H:%M")
-    html_out = render_dashboard(events, generated_at, len(artists), n_new, owner, scope)
+    html_out = render_dashboard(events, generated_at, len(artists), n_new, owner, scope, artists)
     with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(html_out)
 
