@@ -332,10 +332,20 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
     n_shows = len(events)
     n_priority = len(priority_upcoming)
 
-    # ---- Priority hero cards ----
+    # One hero card per artist (soonest window first); count any extra dates.
+    priority_unique, extra_counts, _seen = [], {}, set()
+    for e in priority_upcoming:  # already sorted soonest-first
+        a = e["artist"]
+        if a in _seen:
+            extra_counts[a] = extra_counts.get(a, 0) + 1
+        else:
+            _seen.add(a)
+            priority_unique.append(e)
+
+    # ---- Priority hero cards (one per artist) ----
     hero_cards = ""
-    if priority_upcoming:
-        for e in priority_upcoming:
+    if priority_unique:
+        for e in priority_unique:
             prio_start = pdt(e["priority_start"])
             prio_end = pdt(e["priority_end"])
             pub_start = pdt(e["public_start"])
@@ -365,6 +375,10 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
             general_line = (
                 f'General sale: {esc(fmt_dt(pub_start))}' if pub_start else ""
             )
+            more = extra_counts.get(e['artist'], 0)
+            more_line = (f'<div class="hero-general"><span class="muted">+{more} more upcoming '
+                         f'date{"s" if more != 1 else ""} for this artist — see the list below</span></div>'
+                         if more else "")
             hero_cards += f"""
             <div class="hero-card {card_class}">
                 <div class="hero-top">
@@ -380,6 +394,7 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
                 </div>
                 <div class="hero-window">{window_line}</div>
                 <div class="hero-general">{general_line}</div>
+                {more_line}
                 <a class="hero-link" href="{esc(e['url'])}" target="_blank">View on Ticketmaster &rarr;</a>
             </div>"""
     else:
