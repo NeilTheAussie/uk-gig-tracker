@@ -291,6 +291,59 @@ def esc(x):
     return html.escape(str(x)) if x is not None else ""
 
 
+# Client-side behaviour: collapse is native <details>; this handles hide/show
+# (saved per-browser in localStorage) and the "add a band" -> GitHub editor flow.
+DASHBOARD_JS = r"""
+(function(){
+  var LS='gig_hidden_artists';
+  function getHidden(){ try{return JSON.parse(localStorage.getItem(LS)||'[]');}catch(e){return [];} }
+  function setHidden(a){ try{localStorage.setItem(LS,JSON.stringify(a));}catch(e){} }
+  function repoBase(){
+    var owner=(location.hostname.split('.')[0])||'';
+    var seg=location.pathname.split('/').filter(Boolean);
+    return 'https://github.com/'+owner+'/'+(seg.length?seg[0]:'');
+  }
+  function apply(){
+    var hid=getHidden(), set={};
+    hid.forEach(function(n){ set[n.toLowerCase()]=1; });
+    document.querySelectorAll('[data-artist]').forEach(function(el){
+      el.style.display = set[(el.getAttribute('data-artist')||'').toLowerCase()] ? 'none':'';
+    });
+    var b=document.getElementById('show-hidden');
+    if(b){ if(hid.length){ b.textContent='Show hidden bands ('+hid.length+')'; b.disabled=false; }
+           else { b.textContent='No hidden bands'; b.disabled=true; } }
+  }
+  document.addEventListener('click',function(ev){
+    var h=ev.target.closest('.hide-btn');
+    if(h){ ev.preventDefault(); ev.stopPropagation();
+      var name=h.getAttribute('data-hide'), hid=getHidden();
+      if(hid.indexOf(name)===-1){ hid.push(name); setHidden(hid); apply(); }
+    }
+  });
+  function bind(){
+    var sb=document.getElementById('show-hidden');
+    if(sb){ sb.addEventListener('click',function(){ setHidden([]); apply(); }); }
+    var ab=document.getElementById('add-band-btn'), inp=document.getElementById('add-band-input'),
+        msg=document.getElementById('add-band-msg');
+    function add(){
+      var name=(inp.value||'').trim();
+      if(!name){ inp.focus(); return; }
+      try{ navigator.clipboard.writeText(name); }catch(e){}
+      if(msg){ msg.innerHTML='Copied <b>'+name.replace(/[<>&]/g,'')+'</b> to your clipboard. '
+        +'In the GitHub tab that just opened, scroll to the bottom of <code>artists.txt</code>, '
+        +'paste it on a new line, then click <b>Commit changes</b>. The dashboard updates within ~2 minutes.'; }
+      window.open(repoBase()+'/edit/master/artists.txt','_blank');
+      inp.value='';
+    }
+    if(ab){ ab.addEventListener('click',add); }
+    if(inp){ inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ add(); } }); }
+    apply();
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',bind); } else { bind(); }
+})();
+"""
+
+
 def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk"):
     now = datetime.now(UK_TZ)
     title_text = (f"{owner}'s " if owner else "") + {
@@ -380,7 +433,7 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
                          f'date{"s" if more != 1 else ""} for this artist — see the list below</span></div>'
                          if more else "")
             hero_cards += f"""
-            <div class="hero-card {card_class}">
+            <div class="hero-card {card_class}" data-artist="{esc(e['artist'])}">
                 <div class="hero-top">
                     <span class="{badge_class}">{badge}</span>
                     <span class="countdown">{esc(countdown)}</span>
@@ -432,7 +485,7 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
             if show_country and e.get('country'):
                 loc = f"{loc}, {esc(e['country'])}" if loc else esc(e['country'])
             out += f"""
-            <tr>
+            <tr data-artist="{esc(e['artist'])}">
                 {artist_td}
                 <td>{esc(e['venue'] or 'TBC')}<br><span class="muted">{loc}</span></td>
                 <td>{esc(ev_date)}{date_extra}</td>
@@ -460,25 +513,31 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
         groups = {}
         for e in events:
             groups.setdefault(e["artist"], []).append(e)
-        body = ""
+        blocks = ""
         for artist in sorted(groups, key=lambda a: a.lower()):
             evs_a = sorted(groups[artist], key=lambda e: pdt(e["event_dt"]) or now)
             n = len(evs_a)
             anynew = ' <span class="new-tag">NEW</span>' if any(x.get("_is_new") for x in evs_a) else ""
-            body += (f'<tr class="group-row"><td colspan="6">{esc(artist)} '
-                     f'<span class="muted">· {n} show{"s" if n != 1 else ""}</span>{anynew}</td></tr>')
-            body += rows(evs_a, show_priority=True, show_artist=False, show_onsale=True, show_o2=True)
-        all_table = f"""
-        <table>
-            <thead><tr><th>Venue</th><th>Show date</th><th>On sale</th><th>O2</th><th>Priority (est/confirmed)</th><th>Buy</th></tr></thead>
-            <tbody>{body}</tbody>
-        </table>"""
+            inner = rows(evs_a, show_priority=True, show_artist=False, show_onsale=True, show_o2=True)
+            blocks += f"""
+        <details class="artist-block" data-artist="{esc(artist)}">
+            <summary>
+                <span class="artist-name">{esc(artist)}</span>
+                <span class="muted">· {n} show{'s' if n != 1 else ''}</span>{anynew}
+                <button class="hide-btn" data-hide="{esc(artist)}" title="Remove this band from your view">✕ hide</button>
+            </summary>
+            <table>
+                <thead><tr><th>Venue</th><th>Show date</th><th>On sale</th><th>O2</th><th>Priority (est/confirmed)</th><th>Buy</th></tr></thead>
+                <tbody>{inner}</tbody>
+            </table>
+        </details>"""
+        all_table = blocks
     else:
         all_table = f'<p class="muted">No {shows_noun} found for your tracked artists yet.</p>'
 
     new_kpi_class = "kpi-up" if n_new else "kpi-neutral"
 
-    return f"""<!DOCTYPE html>
+    page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -528,7 +587,24 @@ td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:un
 .muted {{ color:#999; font-size:13px; }}
 .new-tag {{ background:#dc2626; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:3px; vertical-align:middle; }}
 .report-footer {{ margin-top:40px; padding-top:20px; border-top:1px solid #e0e0e0; font-size:12px; color:#999; }}
-@media print {{ body {{ padding:20px; background:#fff; }} .hero-card,.kpi-card {{ break-inside:avoid; }} }}
+details.artist-block {{ background:#fff; border:1px solid #e0e0e0; border-radius:8px; margin:8px 0; overflow:hidden; }}
+details.artist-block > summary {{ cursor:pointer; padding:11px 16px; font-size:15px; display:flex; align-items:center; gap:8px; list-style:none; }}
+details.artist-block > summary::-webkit-details-marker {{ display:none; }}
+details.artist-block > summary::before {{ content:'\\25B8'; color:#999; font-size:12px; transition:transform .15s ease; }}
+details.artist-block[open] > summary::before {{ transform:rotate(90deg); }}
+details.artist-block > summary:hover {{ background:#fafafa; }}
+details.artist-block table {{ margin:0; border-top:1px solid #eee; }}
+.artist-name {{ font-weight:700; }}
+.hide-btn {{ margin-left:auto; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:4px; font-size:11px; font-weight:600; padding:3px 9px; cursor:pointer; }}
+.hide-btn:hover {{ background:#fee2e2; }}
+.manage-bar {{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }}
+.manage-bar input {{ flex:1; min-width:220px; padding:9px 12px; border:1px solid #d0d0d0; border-radius:6px; font-size:14px; }}
+.btn-primary {{ background:#2563eb; color:#fff; border:none; border-radius:6px; padding:9px 16px; font-size:14px; font-weight:600; cursor:pointer; }}
+.btn-primary:hover {{ background:#1d4ed8; }}
+.btn-ghost {{ background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:6px; padding:9px 14px; font-size:13px; cursor:pointer; }}
+.btn-ghost:disabled {{ color:#aaa; cursor:default; }}
+.manage-msg {{ margin-top:8px; font-size:13px; }}
+@media print {{ body {{ padding:20px; background:#fff; }} .hero-card,.kpi-card {{ break-inside:avoid; }} details.artist-block {{ break-inside:avoid; }} }}
 </style>
 </head>
 <body>
@@ -552,7 +628,21 @@ td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:un
 </div>
 
 <div class="section">
-    <h2>All tracked {esc(shows_noun)} — grouped by artist</h2>
+    <h2>Manage bands</h2>
+    <div class="manage-bar">
+        <input id="add-band-input" type="text" placeholder="Add a band — e.g. Foo Fighters">
+        <button id="add-band-btn" class="btn-primary">+ Add band</button>
+        <button id="show-hidden" class="btn-ghost">No hidden bands</button>
+    </div>
+    <div id="add-band-msg" class="manage-msg muted"></div>
+    <div class="muted" style="font-size:12px;margin-top:6px">
+        <b>✕ hide</b> on any band removes it from your view (saved in this browser; use “Show hidden” to restore).
+        <b>+ Add band</b> opens your tracked-list file on GitHub so the next scan includes it.
+    </div>
+</div>
+
+<div class="section">
+    <h2>All tracked {esc(shows_noun)} — grouped by artist <span class="muted" style="font-size:13px;font-weight:400">(click a band to see dates)</span></h2>
     {all_table}
 </div>
 
@@ -568,8 +658,10 @@ td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:un
     48h-before-general-sale pattern at a non-O2 venue. Windows are a guide — always confirm in the O2 Priority app.
     Re-run <code>tour_tracker.py</code> after new tour announcements to refresh.
 </div>
+<script>__SCRIPT__</script>
 </body>
 </html>"""
+    return page.replace("__SCRIPT__", DASHBOARD_JS)
 
 
 # --------------------------------------------------------------------------- #
