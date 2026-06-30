@@ -394,6 +394,7 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
     other.sort(key=lambda e: pdt(e["event_dt"]) or now)
 
     n_shows = len(events)
+    n_artists_playing = len({e["artist"] for e in events})
     n_priority = len(priority_upcoming)
 
     # One hero card per artist (soonest window first); count any extra dates.
@@ -627,7 +628,7 @@ details.artist-block table {{ margin:0; border-top:1px solid #eee; }}
 </div>
 
 <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-value">{n_shows}</div><div class="kpi-label">Upcoming {esc(shows_noun)}</div></div>
+    <div class="kpi-card"><div class="kpi-value">{n_artists_playing}</div><div class="kpi-label">Bands with upcoming shows <span class="muted">· {n_shows} {esc(shows_noun)}</span></div></div>
     <div class="kpi-card"><div class="kpi-value kpi-neutral">{n_priority}</div><div class="kpi-label">Priority windows ahead</div></div>
     <div class="kpi-card"><div class="kpi-value">{len(on_sale_now)}</div><div class="kpi-label">On sale now</div></div>
     <div class="kpi-card"><div class="kpi-value {new_kpi_class}">{n_new}</div><div class="kpi-label">New since last run</div></div>
