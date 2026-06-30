@@ -41,12 +41,20 @@ except Exception:  # pragma: no cover
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
+SETTINGS_PATH = os.path.join(HERE, "settings.json")
 ARTISTS_PATH = os.path.join(HERE, "artists.txt")
 CACHE_PATH = os.path.join(HERE, "cache.json")
 DASHBOARD_PATH = os.path.join(HERE, "dashboard.html")
 
 API_BASE = "https://app.ticketmaster.com/discovery/v2"
 PRIORITY_LEAD_HOURS = 48  # O2 Priority presale typically opens ~48h before general sale
+
+# Country codes counted as "Europe" (incl. UK) when scope = "europe".
+EUROPE_CODES = {
+    "GB", "IE", "FR", "DE", "NL", "BE", "LU", "ES", "PT", "IT", "CH", "AT",
+    "DK", "SE", "NO", "FI", "IS", "PL", "CZ", "SK", "HU", "RO", "BG", "GR",
+    "HR", "SI", "RS", "EE", "LV", "LT", "UA", "TR", "MT", "CY",
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -65,6 +73,23 @@ def load_config():
     if not key or key.startswith("PASTE_"):
         sys.exit("Add your Ticketmaster API key to config.json first.")
     return cfg
+
+
+def load_settings():
+    """owner (name shown in the title) + scope: 'uk' | 'europe' | 'world'.
+    Committed file (config.json is regenerated in the cloud, so scope can't live there)."""
+    owner, scope = "", "uk"
+    if os.path.exists(SETTINGS_PATH):
+        try:
+            with open(SETTINGS_PATH, encoding="utf-8") as f:
+                s = json.load(f)
+            owner = (s.get("owner") or "").strip()
+            scope = (s.get("scope") or "uk").strip().lower()
+        except Exception:
+            pass
+    if scope not in ("uk", "europe", "world"):
+        scope = "uk"
+    return owner, scope
 
 
 def load_artists():
@@ -131,13 +156,34 @@ def resolve_attraction_id(name, key):
     return items[0].get("id"), items[0].get("name")
 
 
-def fetch_uk_events(attraction_id, key):
-    data = tm_get("events.json", key, attractionId=attraction_id,
-                  countryCode="GB", classificationName="music",
-                  sort="date,asc", size=50)
-    if not data:
-        return []
-    return (data.get("_embedded") or {}).get("events") or []
+def _venue_country_code(ev):
+    venues = (ev.get("_embedded") or {}).get("venues") or []
+    if not venues:
+        return ""
+    return ((venues[0].get("country") or {}).get("countryCode") or "").upper()
+
+
+def fetch_events(attraction_id, key, scope="uk"):
+    """Fetch an artist's music events for the scope.
+    uk -> GB only; europe -> worldwide then filtered to EUROPE_CODES; world -> all."""
+    params = dict(attractionId=attraction_id, classificationName="music",
+                  sort="date,asc", size=100)
+    if scope == "uk":
+        params["countryCode"] = "GB"
+    events, page = [], 0
+    while page < 5:  # safety cap: 5 x 100 = 500 events per artist
+        data = tm_get("events.json", key, page=page, **params)
+        if not data:
+            break
+        batch = (data.get("_embedded") or {}).get("events") or []
+        events.extend(batch)
+        total_pages = (data.get("page") or {}).get("totalPages") or 1
+        page += 1
+        if page >= total_pages:
+            break
+    if scope == "europe":
+        events = [e for e in events if _venue_country_code(e) in EUROPE_CODES]
+    return events
 
 
 # --------------------------------------------------------------------------- #
@@ -227,6 +273,8 @@ def build_event_record(artist_display, ev):
             parse_iso(((ev.get("dates") or {}).get("start") or {}).get("dateTime"))),
         "venue": venue.get("name"),
         "city": (venue.get("city") or {}).get("name"),
+        "country": (venue.get("country") or {}).get("name"),
+        "country_code": ((venue.get("country") or {}).get("countryCode") or "").upper(),
         "o2_venue": o2_venue,
         "public_start": public_start.isoformat() if public_start else None,
         "priority_kind": prio_kind,
@@ -243,8 +291,21 @@ def esc(x):
     return html.escape(str(x)) if x is not None else ""
 
 
-def render_dashboard(events, generated_at, n_artists, n_new):
+def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk"):
     now = datetime.now(UK_TZ)
+    title_text = (f"{owner}'s " if owner else "") + {
+        "uk": "UK Gig Tracker",
+        "europe": "UK & Europe Gig Tracker",
+        "world": "Worldwide Gig Tracker",
+    }.get(scope, "Gig Tracker")
+    shows_noun = {"uk": "UK shows", "europe": "UK & Europe shows",
+                  "world": "shows worldwide"}.get(scope, "shows")
+    coverage_note = {
+        "uk": "O2 Priority windows estimated at 48h before general sale",
+        "europe": "Covering UK + Europe · O2 Priority (UK shows) estimated at 48h before general sale",
+        "world": "Covering worldwide · presale windows estimated at 48h before general sale",
+    }.get(scope, "")
+    show_country = scope != "uk"
 
     def pdt(iso):
         return to_uk(parse_iso(iso)) if iso else None
@@ -314,7 +375,7 @@ def render_dashboard(events, generated_at, n_artists, n_new):
                 <div class="hero-artist">{esc(e['artist'])}</div>
                 <div class="hero-event">{esc(e['name'])}</div>
                 <div class="hero-meta">
-                    {esc(e['venue'] or 'Venue TBC')}{', ' + esc(e['city']) if e['city'] else ''} {o2_chip}
+                    {esc(e['venue'] or 'Venue TBC')}{', ' + esc(e['city']) if e['city'] else ''}{(', ' + esc(e['country'])) if (show_country and e.get('country')) else ''} {o2_chip}
                     &nbsp;·&nbsp; {esc(fmt_dt(pdt(e['event_dt']), with_time=False) if e['event_dt'] else e['event_local_date'])}
                 </div>
                 <div class="hero-window">{window_line}</div>
@@ -345,10 +406,13 @@ def render_dashboard(events, generated_at, n_artists, n_new):
             link = f'<a href="{esc(e["url"])}" target="_blank">tickets</a>' if e["url"] else ""
             artist_td = f'<td><strong>{esc(e["artist"])}</strong> {new_tag}</td>' if show_artist else ""
             date_extra = f' {new_tag}' if (not show_artist and new_tag) else ""
+            loc = esc(e['city'] or '')
+            if show_country and e.get('country'):
+                loc = f"{loc}, {esc(e['country'])}" if loc else esc(e['country'])
             out += f"""
             <tr>
                 {artist_td}
-                <td>{esc(e['venue'] or 'TBC')}<br><span class="muted">{esc(e['city'] or '')}</span></td>
+                <td>{esc(e['venue'] or 'TBC')}<br><span class="muted">{loc}</span></td>
                 <td>{esc(ev_date)}{date_extra}</td>
                 {f'<td>{prio}</td>' if show_priority else ''}
                 <td>{link}</td>
@@ -386,7 +450,7 @@ def render_dashboard(events, generated_at, n_artists, n_new):
             <tbody>{body}</tbody>
         </table>"""
     else:
-        all_table = '<p class="muted">No UK shows found for your tracked artists yet.</p>'
+        all_table = f'<p class="muted">No {shows_noun} found for your tracked artists yet.</p>'
 
     new_kpi_class = "kpi-up" if n_new else "kpi-neutral"
 
@@ -395,7 +459,7 @@ def render_dashboard(events, generated_at, n_artists, n_new):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UK Gig Tracker</title>
+<title>{esc(title_text)}</title>
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 body {{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
@@ -445,14 +509,14 @@ td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:un
 </head>
 <body>
 <div class="report-header">
-    <h1>UK Gig Tracker</h1>
+    <h1>{esc(title_text)}</h1>
     <div class="report-meta">
-        Generated {esc(generated_at)} · {n_artists} artists tracked · O2 Priority windows estimated at 48h before general sale
+        Generated {esc(generated_at)} · {n_artists} artists tracked · {esc(coverage_note)}
     </div>
 </div>
 
 <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-value">{n_shows}</div><div class="kpi-label">Upcoming UK shows</div></div>
+    <div class="kpi-card"><div class="kpi-value">{n_shows}</div><div class="kpi-label">Upcoming {esc(shows_noun)}</div></div>
     <div class="kpi-card"><div class="kpi-value kpi-neutral">{n_priority}</div><div class="kpi-label">Priority windows ahead</div></div>
     <div class="kpi-card"><div class="kpi-value">{len(on_sale_now)}</div><div class="kpi-label">On sale now</div></div>
     <div class="kpi-card"><div class="kpi-value {new_kpi_class}">{n_new}</div><div class="kpi-label">New since last run</div></div>
@@ -469,7 +533,7 @@ td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:un
 </div>
 
 <div class="section">
-    <h2>All tracked UK shows</h2>
+    <h2>All tracked {esc(shows_noun)}</h2>
     {all_table}
 </div>
 
@@ -490,11 +554,12 @@ td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:un
 def main():
     cfg = load_config()
     key = cfg["ticketmaster_api_key"].strip()
+    owner, scope = load_settings()
     artists = load_artists()
     prev_cache = load_cache()
     prev_ids = set(prev_cache.get("event_ids", []))
 
-    print(f"Tracking {len(artists)} artists...\n")
+    print(f"Tracking {len(artists)} artists (scope: {scope})...\n")
     all_events = []
     for name in artists:
         print(f"  {name}")
@@ -504,8 +569,8 @@ def main():
             continue
         if matched.lower() != name.lower():
             print(f"    matched to '{matched}'")
-        evs = fetch_uk_events(attraction_id, key)
-        print(f"    {len(evs)} UK show(s)")
+        evs = fetch_events(attraction_id, key, scope)
+        print(f"    {len(evs)} show(s)")
         for ev in evs:
             all_events.append(build_event_record(name, ev))
         time.sleep(0.25)  # be gentle on rate limits
@@ -525,7 +590,7 @@ def main():
             n_new += 1
 
     generated_at = datetime.now(UK_TZ).strftime("%a %d %b %Y, %H:%M")
-    html_out = render_dashboard(events, generated_at, len(artists), n_new)
+    html_out = render_dashboard(events, generated_at, len(artists), n_new, owner, scope)
     with open(DASHBOARD_PATH, "w", encoding="utf-8") as f:
         f.write(html_out)
 

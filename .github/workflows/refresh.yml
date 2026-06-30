@@ -12,6 +12,7 @@ on:
     paths:                    # re-publish when you edit the tracker/artist list
       - "artists.txt"
       - "tour_tracker.py"
+      - "settings.json"
       - ".github/workflows/refresh.yml"
 
 permissions:
