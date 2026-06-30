@@ -388,7 +388,7 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
                       '(see below). Re-run after new tour announcements.</div>')
 
     # ---- Row renderer (shared by the tables below) ----
-    def rows(bucket, show_priority=True, show_artist=True):
+    def rows(bucket, show_priority=True, show_artist=True, show_onsale=False, show_o2=False):
         out = ""
         for e in bucket:
             new_tag = '<span class="new-tag">NEW</span>' if e.get("_is_new") else ""
@@ -399,10 +399,17 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
                 if ps:
                     k = e["priority_kind"]
                     tag = "" if k == "exact" else " (likely)" if k == "likely" else " (est)"
-                    chip = ' <span class="chip-o2">O2</span>' if e.get("o2_venue") else ""
-                    prio = f"{esc(fmt_dt(ps))}{tag}{chip}"
+                    prio = f"{esc(fmt_dt(ps))}{tag}"
                 else:
                     prio = "—"
+            onsale_td = ""
+            if show_onsale:
+                pub = pdt(e["public_start"])
+                onsale_td = f"<td>{esc(fmt_dt(pub)) if pub else 'TBC'}</td>"
+            o2_td = ""
+            if show_o2:
+                o2_td = ('<td><span class="chip-o2">O2</span></td>' if e.get("o2_venue")
+                         else '<td><span class="muted">—</span></td>')
             link = f'<a href="{esc(e["url"])}" target="_blank">tickets</a>' if e["url"] else ""
             artist_td = f'<td><strong>{esc(e["artist"])}</strong> {new_tag}</td>' if show_artist else ""
             date_extra = f' {new_tag}' if (not show_artist and new_tag) else ""
@@ -414,6 +421,8 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
                 {artist_td}
                 <td>{esc(e['venue'] or 'TBC')}<br><span class="muted">{loc}</span></td>
                 <td>{esc(ev_date)}{date_extra}</td>
+                {onsale_td}
+                {o2_td}
                 {f'<td>{prio}</td>' if show_priority else ''}
                 <td>{link}</td>
             </tr>"""
@@ -424,8 +433,8 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
     if on_sale_now:
         on_sale_table = f"""
         <table>
-            <thead><tr><th>Artist</th><th>Venue</th><th>Show date</th><th>Buy</th></tr></thead>
-            <tbody>{rows(on_sale_now, show_priority=False)}</tbody>
+            <thead><tr><th>Artist</th><th>Venue</th><th>Show date</th><th>O2</th><th>Buy</th></tr></thead>
+            <tbody>{rows(on_sale_now, show_priority=False, show_o2=True)}</tbody>
         </table>"""
     else:
         on_sale_table = '<p class="muted">Nothing currently on general sale.</p>'
@@ -441,12 +450,12 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
             evs_a = sorted(groups[artist], key=lambda e: pdt(e["event_dt"]) or now)
             n = len(evs_a)
             anynew = ' <span class="new-tag">NEW</span>' if any(x.get("_is_new") for x in evs_a) else ""
-            body += (f'<tr class="group-row"><td colspan="4">{esc(artist)} '
+            body += (f'<tr class="group-row"><td colspan="6">{esc(artist)} '
                      f'<span class="muted">· {n} show{"s" if n != 1 else ""}</span>{anynew}</td></tr>')
-            body += rows(evs_a, show_priority=True, show_artist=False)
+            body += rows(evs_a, show_priority=True, show_artist=False, show_onsale=True, show_o2=True)
         all_table = f"""
         <table>
-            <thead><tr><th>Venue</th><th>Show date</th><th>Priority (est/confirmed)</th><th>Buy</th></tr></thead>
+            <thead><tr><th>Venue</th><th>Show date</th><th>On sale</th><th>O2</th><th>Priority (est/confirmed)</th><th>Buy</th></tr></thead>
             <tbody>{body}</tbody>
         </table>"""
     else:
