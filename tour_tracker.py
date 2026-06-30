@@ -119,6 +119,10 @@ def load_cache():
 # --------------------------------------------------------------------------- #
 # Ticketmaster API
 # --------------------------------------------------------------------------- #
+class QuotaExceeded(Exception):
+    """Daily Ticketmaster quota spent — stop scanning and keep last-good data."""
+
+
 def tm_get(path, key, **params):
     params["apikey"] = key
     url = f"{API_BASE}/{path}"
@@ -132,7 +136,10 @@ def tm_get(path, key, **params):
             backoff = min(backoff * 2, 20)
             continue
         if r.status_code == 429:  # rate limited
-            print(f"    rate limited; backing off {backoff}s...")
+            # Daily quota exhausted -> no point retrying; bail fast and keep last-good.
+            if "QuotaViolation" in (r.text or "") or r.headers.get("Rate-Limit-Available") == "0":
+                raise QuotaExceeded("daily Ticketmaster quota (5000/day) exhausted")
+            print(f"    rate limited (per-second); backing off {backoff}s...")
             time.sleep(backoff)
             backoff = min(backoff * 2, 20)
             continue
@@ -681,19 +688,22 @@ def main():
 
     print(f"Tracking {len(artists)} artists (scope: {scope})...\n")
     all_events = []
-    for name in artists:
-        print(f"  {name}")
-        attraction_id, matched = resolve_attraction_id(name, key)
-        if not attraction_id:
-            print("    no music match found, skipping")
-            continue
-        if matched.lower() != name.lower():
-            print(f"    matched to '{matched}'")
-        evs = fetch_events(attraction_id, key, scope)
-        print(f"    {len(evs)} show(s)")
-        for ev in evs:
-            all_events.append(build_event_record(name, ev))
-        time.sleep(0.5)  # be gentle on the per-second rate limit
+    try:
+        for name in artists:
+            print(f"  {name}")
+            attraction_id, matched = resolve_attraction_id(name, key)
+            if not attraction_id:
+                print("    no music match found, skipping")
+                continue
+            if matched.lower() != name.lower():
+                print(f"    matched to '{matched}'")
+            evs = fetch_events(attraction_id, key, scope)
+            print(f"    {len(evs)} show(s)")
+            for ev in evs:
+                all_events.append(build_event_record(name, ev))
+            time.sleep(0.5)  # be gentle on the per-second rate limit
+    except QuotaExceeded as e:
+        print(f"\nStopping early: {e}. Keeping last-good data instead of publishing a thin dashboard.")
 
     # Dedupe by event id
     seen = {}
