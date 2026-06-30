@@ -326,7 +326,7 @@ def render_dashboard(events, generated_at, n_artists, n_new, owner="", scope="uk
             other.append(e)
 
     priority_upcoming.sort(key=lambda e: pdt(e["priority_start"]) or now)
-    on_sale_now.sort(key=lambda e: (e["artist"].lower(), pdt(e["event_dt"]) or now))
+    on_sale_now.sort(key=lambda e: pdt(e["event_dt"]) or now)
     other.sort(key=lambda e: pdt(e["event_dt"]) or now)
 
     n_shows = len(events)
@@ -537,13 +537,13 @@ td a {{ color:#2563eb; text-decoration:none; }} td a:hover {{ text-decoration:un
 </div>
 
 <div class="section">
-    <h2>On sale now</h2>
-    {on_sale_table}
+    <h2>All tracked {esc(shows_noun)} — grouped by artist</h2>
+    {all_table}
 </div>
 
 <div class="section">
-    <h2>All tracked {esc(shows_noun)}</h2>
-    {all_table}
+    <h2>On sale now — by date</h2>
+    {on_sale_table}
 </div>
 
 <div class="report-footer">
