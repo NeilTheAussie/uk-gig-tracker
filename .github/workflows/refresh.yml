@@ -6,6 +6,7 @@ name: Refresh gig dashboard
 on:
   schedule:
     - cron: "0 8 */2 * *"   # ~every 2 days, 08:00 UTC
+    - cron: "30 20 30 6 *"   # one-off recovery after quota reset (30 Jun 20:30 UTC)
   workflow_dispatch:          # lets you run it on demand from the Actions tab
   push:
     branches: [ master ]
